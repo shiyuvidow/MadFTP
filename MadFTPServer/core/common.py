@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
+import os
 from hashlib import sha256
 from hmac import HMAC
 
@@ -17,3 +18,10 @@ def set_password(raw_password, salt=None):
 def check_password(raw_password, enc_password):
     salt = enc_password.split('$')[0]
     return enc_password == set_password(raw_password, salt)
+
+
+def get_quotation(path):
+    size = 0L
+    for root, dirs, files in os.walk(path, True):
+        size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
+    return size

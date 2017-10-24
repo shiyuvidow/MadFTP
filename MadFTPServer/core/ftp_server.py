@@ -6,10 +6,11 @@ import json
 import ConfigParser
 import hashlib
 from conf import settings
-from core.common import check_password
+from core.common import check_password, get_quotation
 import progressbar
 import shutil
 
+STANDARD_QUOTATION = 300L * 1024 * 1024
 STATUS_CODE = {
     200: "Info",
     250: "Invalid cmd format",
@@ -30,7 +31,9 @@ STATUS_CODE = {
     265: "can not cd  upper dir",
     266: "ls success",
     267: "rm success",
-    268: "continue to receive file"
+    268: "continue to receive file",
+    269: "df success",
+    270: "full quotation, you have no space to put file"
 }
 
 
@@ -118,6 +121,12 @@ class FTPHandler(SocketServer.BaseRequestHandler):
             self.userdata.update(username=username)
             print("Pass Auth: ", self.userdata)
             self.user_home_dir = "%s/%s" % (settings.USER_HOME, self.userdata.get('username', ''))
+            self.quotation = self.userdata.get('quotation')
+            if self.quotation and str(self.quotation).isdigit():
+                self.quotation = long(self.quotation) * 1024 * 1024
+            else:
+                print "Invalid or empty quotation, set standard quotation"
+                self.quotation = STANDARD_QUOTATION
             self.send_response(254)
         else:
             self.send_response(253)
@@ -146,6 +155,9 @@ class FTPHandler(SocketServer.BaseRequestHandler):
             dest_dir += '/' + offset
         # user_home_dir = "%s/%s" % (settings.USER_HOME, self.userdata.get('username', ''))
         file_abs_path = "%s/%s" % (dest_dir, filename)
+        if (get_quotation(self.user_home_dir) + long(filesize)) > self.quotation:
+            print "full quotation"
+            self.send_response(270)
         ret = os.path.isfile(file_abs_path)
         if not ret:
             print "ready to receive file--"
@@ -313,6 +325,13 @@ class FTPHandler(SocketServer.BaseRequestHandler):
         else:
             shutil.rmtree(dest_dir)
             self.send_response(267)
+
+    def _df(self,  *args, **kwargs):
+        data = {
+            'quotation': self.quotation,
+            'used': get_quotation(self.user_home_dir)
+        }
+        self.send_response(269, data=data)
 
 
 

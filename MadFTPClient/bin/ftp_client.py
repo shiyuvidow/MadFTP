@@ -35,6 +35,8 @@ STATUS_CODE = {
     265: "can not cd upper dir",
     266: "ls success",
     267: "rm success",
+    268: "continue to receive file",
+    269: "df success",
 }
 
 
@@ -255,6 +257,9 @@ class FTPClient(object):
             self.send_response(data_header)
             reponse = self.get_response()
             status_code = reponse.get("status_code")
+            if status_code == 270:
+                print "full quotation, you have no space to put file"
+                return
             if status_code == 259 or status_code == 268:
                 file_obj = open(filename, "rb")
                 if status_code == 268:
@@ -370,6 +375,16 @@ class FTPClient(object):
             print "rm ok"
         if reponse.get("status_code") == 264:
             print "dir not exists"
+
+    def _df(self, cmd_list):
+        print "df----"
+        data_header = {
+            'action': 'df',
+        }
+        self.send_response(data_header)
+        reponse = self.get_response()
+        if reponse.get("status_code") == 269:
+            print "Total: {}, Used: {}".format(reponse.get('quotation', '0'), reponse.get('used', '0'))
 
 
 if __name__ == '__main__':
