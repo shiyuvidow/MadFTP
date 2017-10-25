@@ -158,6 +158,7 @@ class FTPHandler(SocketServer.BaseRequestHandler):
         if (get_quotation(self.user_home_dir) + long(filesize)) > self.quotation:
             print "full quotation"
             self.send_response(270)
+            return
         ret = os.path.isfile(file_abs_path)
         if not ret:
             print "ready to receive file--"
